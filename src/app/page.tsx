@@ -1,101 +1,191 @@
-// src/app/page.tsx
 "use client";
 
 import { useState } from "react";
-import { Upload, BookOpen, BrainCircuit, Loader2 } from "lucide-react";
-// Importamos a função do nosso serviço novo
-import { gerarFlashcardsAction } from "../services/aiService";
+import { Upload, BookOpen, Loader2, FileText, Sparkles } from "lucide-react";
+import { motion } from "framer-motion"; 
+import { FlashcardItem } from "@/components/FlashcardItem";
+import { gerarFlashcardsAction } from "@/services/aiService";
 
-// Definindo o tipo para não usar "any" (Coisa de Clean Code!)
 interface Flashcard {
   front: string;
   back: string;
 }
 
 export default function Home() {
+  const [mode, setMode] = useState<"text" | "pdf">("text");
   const [text, setText] = useState("");
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([]); 
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fileName, setFileName] = useState("");
 
-  async function handleGenerate() {
-    if (!text) return alert("Digite algum texto para estudar!");
-    
+  // Função para ler o PDF
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     setLoading(true);
-    setFlashcards([]); // Limpa cards antigos
+    setFileName(file.name);
+
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      // --- MUDANÇA AQUI ---
-      // Em vez de fetch('/api/generate'), chamamos direto a função segura:
-      const cardsGerados = await gerarFlashcardsAction(text);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
       
-      if (cardsGerados && cardsGerados.length > 0) {
-        setFlashcards(cardsGerados);
+      if (data.text) {
+        setText(data.text);
       } else {
-        alert("A IA não conseguiu gerar flashcards com esse texto. Tente outro.");
+        alert("Não foi possível ler o texto desse PDF.");
       }
-      // --------------------
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao enviar arquivo.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
+  async function handleGenerate() {
+    if (!text) return alert("Precisamos de conteúdo para gerar os cards!");
+    setLoading(true);
+    setFlashcards([]);
+
+    try {
+      const cards = await gerarFlashcardsAction(text);
+      if (cards && cards.length > 0) {
+        setFlashcards(cards);
+      } else {
+        alert("A IA não conseguiu gerar perguntas com esse texto.");
+      }
     } catch (error) {
-      console.error("Erro de conexão:", error);
-      alert("Erro ao conectar com o servidor.");
+      alert("Erro ao gerar flashcards.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-zinc-50 p-6">
+    <div className="min-h-screen transition-colors duration-500 pb-20">
       
-      <div className="text-center space-y-4 mb-8">
-        <div className="inline-flex items-center justify-center p-3 bg-blue-600/10 rounded-full mb-4">
-          <BrainCircuit className="w-10 h-10 text-blue-500" />
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-          Estude com IA (Clean Arch)
-        </h1>
-      </div>
-
-      <div className="w-full max-w-4xl flex gap-6 flex-col md:flex-row">
-        
-        {/* Lado Esquerdo: Entrada */}
-        <div className="flex-1 space-y-4">
-          <textarea 
-            className="w-full h-80 p-4 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            placeholder="Cole aqui o texto da sua aula..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
+      {/* HERO SECTION */}
+      <section className="text-center py-10 md:py-16 px-4 max-w-4xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-6">
+            <Sparkles className="w-6 h-6 text-primary mr-2" />
+            <span className="text-primary font-bold text-sm tracking-wide">INTELIGÊNCIA ARTIFICIAL V2.5</span>
+          </div>
           
+          <h1 className="font-display text-4xl md:text-6xl mb-6 leading-tight">
+            Estude qualquer coisa <br />
+            <span className="text-primary">em segundos</span>
+          </h1>
+          
+          <p className="font-body text-xl md:text-2xl opacity-70 mb-10 max-w-2xl mx-auto">
+            O ETS transforma seus PDFs e resumos em flashcards inteligentes automaticamente.
+          </p>
+        </motion.div>
+
+        {/* CONTROLES DE MODO */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="bg-[var(--card)] p-2 rounded-2xl shadow-xl border border-[var(--border)] inline-flex mb-8"
+        >
           <button 
-            onClick={handleGenerate}
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+            onClick={() => setMode("text")}
+            className={`px-6 py-2 rounded-xl font-bold transition-all ${mode === 'text' ? 'bg-primary text-white shadow-lg' : 'hover:bg-[var(--card-alt)]'}`}
           >
-            {loading ? <Loader2 className="animate-spin" /> : <BookOpen className="w-5 h-5" />}
-            {loading ? "A IA está pensando..." : "Gerar Flashcards"}
+            Texto
           </button>
+          <button 
+            onClick={() => setMode("pdf")}
+            className={`px-6 py-2 rounded-xl font-bold transition-all ${mode === 'pdf' ? 'bg-primary text-white shadow-lg' : 'hover:bg-[var(--card-alt)]'}`}
+          >
+            Upload PDF
+          </button>
+        </motion.div>
+      </section>
+
+      {/* ÁREA PRINCIPAL */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4">
+        
+        {/* LADO ESQUERDO: INPUT */}
+        <div className="space-y-4">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-lg min-h-[500px] flex flex-col">
+            
+            {mode === "pdf" ? (
+              <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-[var(--border)] rounded-xl bg-[var(--card-alt)] hover:border-primary transition-colors cursor-pointer relative group">
+                <input 
+                  type="file" 
+                  accept=".pdf" 
+                  onChange={handleFileUpload} 
+                  className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                />
+                <div className="text-center p-6 transition-transform group-hover:scale-105">
+                    <Upload className="w-16 h-16 text-primary mb-4 mx-auto" />
+                    <p className="font-bold text-lg mb-2">Clique ou arraste seu PDF</p>
+                    <p className="text-sm opacity-60">Extração automática de texto</p>
+                </div>
+                {fileName && (
+                  <div className="mt-6 px-4 py-2 bg-green-500/10 text-green-500 rounded-lg flex items-center border border-green-500/20 z-20 relative">
+                    <FileText className="w-4 h-4 mr-2" />
+                    <span className="font-medium truncate max-w-[200px]">{fileName}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <textarea 
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Cole seu resumo de aula, texto ou anotações aqui..."
+                className="flex-1 w-full bg-transparent resize-none outline-none text-lg placeholder:opacity-40 font-body p-2"
+              />
+            )}
+
+            <button 
+              onClick={handleGenerate}
+              disabled={loading || (!text && mode === 'text')}
+              className="mt-6 w-full bg-primary hover:bg-blue-600 text-white font-display py-4 rounded-xl text-xl shadow-lg hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <><Loader2 className="animate-spin mr-2" /> Lendo e Criando...</>
+              ) : (
+                "Gerar Baralho de Estudos"
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Lado Direito: Saída (Flashcards) */}
-        <div className="flex-1 h-80 md:h-auto overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-          
-          {flashcards.length === 0 && !loading && (
-            <div className="h-full flex items-center justify-center text-zinc-600 border-2 border-dashed border-zinc-800 rounded-xl p-8">
-              <p>Os cards aparecerão aqui</p>
-            </div>
-          )}
-
-          {flashcards.map((card, index) => (
-            <div key={index} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500/50 transition-colors shadow-lg">
-              <p className="text-emerald-400 text-xs font-bold uppercase mb-2">Pergunta {index + 1}</p>
-              <h3 className="font-medium text-zinc-100 mb-3 text-lg">{card.front}</h3>
-              <div className="h-px bg-zinc-800 w-full mb-3" />
-              <p className="text-zinc-400 text-sm">{card.back}</p>
-            </div>
-          ))}
+        {/* LADO DIREITO: CARDS */}
+        <div className="bg-[var(--card-alt)]/50 rounded-2xl p-4 border border-[var(--border)] h-[600px] overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            {flashcards.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                <div className="bg-[var(--card)] p-6 rounded-full mb-4">
+                    <BookOpen className="w-12 h-12 text-[var(--text)]" />
+                </div>
+                <p className="font-display text-xl">Seus cards aparecerão aqui</p>
+                <p className="text-sm mt-2">Aguardando conteúdo...</p>
+              </div>
+            ) : (
+              <div className="space-y-4 pb-4">
+                 {flashcards.map((card, idx) => (
+                   <FlashcardItem key={idx} index={idx} front={card.front} back={card.back} />
+                 ))}
+              </div>
+            )}
+          </div>
         </div>
-
-      </div>
-    </main>
+      </section>
+    </div>
   );
 }

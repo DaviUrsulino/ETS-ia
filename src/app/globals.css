@@ -1,1 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Rammetto+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sansita&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
 @import "tailwindcss";
+
+:root {
+  /* Tema Claro */
+  --background: #FFFFFF;
+  --card: #F5F5F5;
+  --card-alt: #F8F9FA;
+  --text: #000000;
+  --header: #F8F9FA;
+  --primary: #2C80FF;
+  --border: #E5E5E5;
+  --gray-text: #666666;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  /* Tema Escuro */
+  --background: #18181b;
+  --card: #27272a;
+  --card-alt: #3f3f46;
+  --text: #f4f4f5;
+  --header: #18181b;
+  --primary: #3b82f6;
+  --border: #3f3f46;
+  --gray-text: #a1a1aa;
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: 'Rammetto One', cursive;
+}
+
+.font-body {
+  font-family: 'Sansita', sans-serif;
+}
+
+/* Scrollbar Bonita */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Container Responsivo */
+.container-responsive {
+  width: 100%;
+  max-width: 95vw;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: 90vw;
+  }
+}
+@media (min-width: 1280px) {
+  .container-responsive {
+    max-width: 1200px;
+  }
+}
