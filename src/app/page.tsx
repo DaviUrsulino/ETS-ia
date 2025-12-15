@@ -1,12 +1,20 @@
+// src/app/page.tsx
 "use client";
 
 import { useState } from "react";
 import { Upload, BookOpen, BrainCircuit, Loader2 } from "lucide-react";
+// Importamos a função do nosso serviço novo
+import { gerarFlashcardsAction } from "../services/aiService";
+
+// Definindo o tipo para não usar "any" (Coisa de Clean Code!)
+interface Flashcard {
+  front: string;
+  back: string;
+}
 
 export default function Home() {
   const [text, setText] = useState("");
-  // Inicializa como array vazio para não dar erro de length
-  const [flashcards, setFlashcards] = useState<any[]>([]); 
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]); 
   const [loading, setLoading] = useState(false);
 
   async function handleGenerate() {
@@ -16,22 +24,16 @@ export default function Home() {
     setFlashcards([]); // Limpa cards antigos
 
     try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-
-      const data = await response.json();
+      // --- MUDANÇA AQUI ---
+      // Em vez de fetch('/api/generate'), chamamos direto a função segura:
+      const cardsGerados = await gerarFlashcardsAction(text);
       
-      // BLINDAGEM: Verifica se vieram os cards antes de tentar usar
-      if (data.flashcards) {
-        setFlashcards(data.flashcards);
+      if (cardsGerados && cardsGerados.length > 0) {
+        setFlashcards(cardsGerados);
       } else {
-        // Se der erro, mostra o que aconteceu
-        console.error("Erro da API:", data);
-        alert("A IA não conseguiu gerar. Erro: " + (data.error || "Desconhecido"));
+        alert("A IA não conseguiu gerar flashcards com esse texto. Tente outro.");
       }
+      // --------------------
 
     } catch (error) {
       console.error("Erro de conexão:", error);
@@ -49,15 +51,16 @@ export default function Home() {
           <BrainCircuit className="w-10 h-10 text-blue-500" />
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-          Estude com IA
+          Estude com IA (Clean Arch)
         </h1>
       </div>
 
-      <div className="w-full max-w-2xl flex gap-6 flex-col md:flex-row">
+      <div className="w-full max-w-4xl flex gap-6 flex-col md:flex-row">
         
+        {/* Lado Esquerdo: Entrada */}
         <div className="flex-1 space-y-4">
           <textarea 
-            className="w-full h-64 p-4 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full h-80 p-4 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             placeholder="Cole aqui o texto da sua aula..."
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -73,18 +76,19 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="flex-1 h-80 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-          {/* O "?" aqui protege contra o erro "undefined" */}
-          {flashcards?.length === 0 && !loading && (
-            <div className="h-full flex items-center justify-center text-zinc-600 border-2 border-dashed border-zinc-800 rounded-xl">
+        {/* Lado Direito: Saída (Flashcards) */}
+        <div className="flex-1 h-80 md:h-auto overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+          
+          {flashcards.length === 0 && !loading && (
+            <div className="h-full flex items-center justify-center text-zinc-600 border-2 border-dashed border-zinc-800 rounded-xl p-8">
               <p>Os cards aparecerão aqui</p>
             </div>
           )}
 
-          {flashcards?.map((card: any, index) => (
-            <div key={index} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500/50 transition-colors">
+          {flashcards.map((card, index) => (
+            <div key={index} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500/50 transition-colors shadow-lg">
               <p className="text-emerald-400 text-xs font-bold uppercase mb-2">Pergunta {index + 1}</p>
-              <h3 className="font-medium text-zinc-100 mb-3">{card.front}</h3>
+              <h3 className="font-medium text-zinc-100 mb-3 text-lg">{card.front}</h3>
               <div className="h-px bg-zinc-800 w-full mb-3" />
               <p className="text-zinc-400 text-sm">{card.back}</p>
             </div>
