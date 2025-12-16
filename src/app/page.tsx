@@ -18,7 +18,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState("");
 
-  // Função para ler o PDF
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -34,16 +33,28 @@ export default function Home() {
         method: "POST",
         body: formData,
       });
+
+      // BLINDAGEM CONTRA ERRO HTML
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const textError = await res.text(); // Lê o HTML do erro
+        console.error("Erro HTML retornado pela API:", textError);
+        throw new Error("O servidor retornou um erro HTML (provavelmente 500 ou 404). Veja o console.");
+      }
+
       const data = await res.json();
       
-      if (data.text) {
+      if (data.error) {
+        alert("Erro da API: " + data.error);
+      } else if (data.text) {
         setText(data.text);
       } else {
-        alert("Não foi possível ler o texto desse PDF.");
+        alert("O PDF foi lido, mas não encontramos texto nele (pode ser imagem?).");
       }
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao enviar arquivo.");
+
+    } catch (err: any) {
+      console.error("Erro no upload:", err);
+      alert("Falha no upload: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -157,7 +168,7 @@ export default function Home() {
               className="mt-6 w-full bg-primary hover:bg-blue-600 text-white font-display py-4 rounded-xl text-xl shadow-lg hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <><Loader2 className="animate-spin mr-2" /> Lendo e Criando...</>
+                <><Loader2 className="animate-spin mr-2" /> Processando Inteligência...</>
               ) : (
                 "Gerar Baralho de Estudos"
               )}

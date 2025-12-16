@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Configuração para evitar erros de módulo
+  serverExternalPackages: ['pdf-parse'],
 };
 
 export default nextConfig;

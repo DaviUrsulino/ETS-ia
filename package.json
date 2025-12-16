@@ -16,10 +16,11 @@
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.561.0",
     "next": "16.0.10",
-    "pdf-parse": "^2.4.5",
+    "pdf-parse": "^1.1.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "tailwind-merge": "^3.4.0",
+    "xmlhttprequest": "^1.8.0",
     "zod": "^4.2.0"
   },
   "devDependencies": {
